@@ -14,30 +14,30 @@ using Rank = long long int;
 MPI_File debug;
 
 
-template<typename T, typename F>
-void writeAll(T *B5, F f, int size, int nprocs, int rank, const char *s = " ") {
-    if (rank != 0) {
-        MPI_Send(B5, size * sizeof(T), MPI_BYTE, 0, 0, MPI_COMM_WORLD);
-    }
-    else {
-        for (int i = 0; i < size; i++) {
-            // printf(s, f(B5[i]));
-            std::cout << f(B5[i]) << s;
-        }
-        for (int j = 1; j < nprocs; j++) {
-            T *eee = new T[size];
-            MPI_Recv(eee, size * sizeof(T), MPI_BYTE, j, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+// template<typename T, typename F>
+// void writeAll(T *B5, F f, int size, int nprocs, int rank, const char *s = " ") {
+//     if (rank != 0) {
+//         MPI_Send(B5, size * sizeof(T), MPI_BYTE, 0, 0, MPI_COMM_WORLD);
+//     }
+//     else {
+//         for (int i = 0; i < size; i++) {
+//             // printf(s, f(B5[i]));
+//             std::cout << f(B5[i]) << s;
+//         }
+//         for (int j = 1; j < nprocs; j++) {
+//             T *eee = new T[size];
+//             MPI_Recv(eee, size * sizeof(T), MPI_BYTE, j, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
             
-            for (int i = 0; i < size; i++) {
-                // printf(s, f(eee[i]));
-                std::cout << f(eee[i]) << s;
-            }
+//             for (int i = 0; i < size; i++) {
+//                 // printf(s, f(eee[i]));
+//                 std::cout << f(eee[i]) << s;
+//             }
 
-            delete[] eee;
-        }
-        printf("==========\n");
-    }
-}
+//             delete[] eee;
+//         }
+//         printf("==========\n");
+//     }
+// }
 
 MPI_Offset getOffset(MPI_Offset totalSize, long long int i, long long int rank) {
     int nprocs;
