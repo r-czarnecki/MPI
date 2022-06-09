@@ -2,6 +2,7 @@
 #include <fstream>
 #include <utility>
 #include <cassert>
+#include <iostream>
 #include <cstring>
 #include <vector>
 #include <mpi.h>
@@ -891,6 +892,9 @@ std::vector<long long int> answerQueries(MPI_Offset totalSize, MPI_Offset myOffs
 
             while (begin <= end) {
                 long long int mid = (begin + end) / 2;
+                if (queryIdx == 75) {
+                    printf("DEBUG | %d %d %d", begin, mid, end);
+                }
 
                 MPI_Allgather(&mid, 1, MPI_LONG_LONG, recvBuff, 1, MPI_LONG_LONG, MPI_COMM_WORLD);
                 
@@ -961,6 +965,10 @@ std::vector<long long int> answerQueries(MPI_Offset totalSize, MPI_Offset myOffs
 
                     saRank++;
                     sa = getOffset(totalSize, 0, saRank);
+
+                    if (queryIdx == 75) {
+                        printf(" | CMP %d\n", cmp);
+                    }
                 }
 
                 bool cont = false;
