@@ -791,7 +791,7 @@ void getSA(MPI_Offset totalSize, MPI_Offset offset, long long int size, long lon
         delete[] B4;
 
         auto B5 = rebucket(totalSize, offset, size, rank, nprocs, B, B3);
-        MPI_Barrier(MPI_COMM_WORLD);
+        // MPI_Barrier(MPI_COMM_WORLD);
         // if (rank == 0) {
         //     printf("REBUCKET 2\n");
         //     for (int i = 0; i < size; i++) {
