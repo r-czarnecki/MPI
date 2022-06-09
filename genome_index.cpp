@@ -609,14 +609,10 @@ void getSA(MPI_Offset totalSize, MPI_Offset offset, long long int size, long lon
     long long int h = 0;
     bool done = false;
     Rank *B3 = new Rank[size];
+    auto B2 = reorder(totalSize, offset, size, rank, nprocs, B, ranks);
 
     while (true) {
         h += k;
-        if (rank == 0) {
-            printf("Reorder\n");
-        }
-
-        auto B2 = reorder(totalSize, offset, size, rank, nprocs, B, ranks);
 
         // if (rank == 0) {
         //     printf("Shift\n");
@@ -714,8 +710,6 @@ void getSA(MPI_Offset totalSize, MPI_Offset offset, long long int size, long lon
         // }
         // writeAll(M, [](std::pair<Rank, MPI_Offset> e){ return "(" + std::to_string(e.first) + ", " + std::to_string(e.second) + ")"; }, size, nprocs, rank, " ", " | ");
 
-        delete[] B2;
-
         MPI_Alltoallv(M, recvCount, recvDispl.data(), MPI_BYTE, M2, count.data(), displacements.data(), MPI_BYTE, MPI_COMM_WORLD);
 
         delete[] recvCount;
@@ -804,15 +798,61 @@ void getSA(MPI_Offset totalSize, MPI_Offset offset, long long int size, long lon
         
         done = allSingletons(totalSize, offset, size, rank, nprocs, B5);
         delete[] ranks;
-        delete[] M;
-        delete[] M2;
         ranks = B5;
 
         if (done) {
             delete[] ranks;
+            delete[] M;
+            delete[] M2;
+            delete[] B2;
             delete[] B3;
             return;
         }
+
+        if (rank == 0) {
+            printf("Reorder %lld\n", h);
+        }
+        
+        std::fill(count.begin(), count.end(), 0);
+        std::fill(count2.begin(), count2.end(), 0);
+        std::fill(displacements.begin(), displacements.end(), 0);
+        std::fill(recvDispl.begin(), recvDispl.end(), 0);
+        for (int i = 0; i < size; i++) {
+            M[i] = std::make_pair(B[i].second, ranks[i]);
+            int d = getRank(nprocs, totalSize, B[i].second);
+            count[d] += sizeof(std::pair<Rank, MPI_Offset>);
+        }
+
+        displacements[0] = 0;
+        for (int i = 1; i < nprocs; i++) {
+            displacements[i] = displacements[i - 1] + count[i - 1];
+        }
+
+        for (int i = 0; i < size; i++) {
+            int d = getRank(nprocs, totalSize, B[i].second);
+            int idx = displacements[d] / sizeof(std::pair<Rank, MPI_Offset>) + count2[d];
+            M2[idx] = M[i];
+            count2[d]++;
+        }
+
+        recvCount = new int[nprocs];
+
+        MPI_Alltoall(count.data(), 1, MPI_INT, recvCount, 1, MPI_INT, MPI_COMM_WORLD);
+
+        recvDispl[0] = 0;
+        for (int i = 1; i <= nprocs; i++) {
+            recvDispl[i] = recvDispl[i - 1] + recvCount[i - 1];
+        }
+
+        MPI_Alltoallv(M2, count.data(), displacements.data(), MPI_BYTE, M, recvCount, recvDispl.data(), MPI_BYTE, MPI_COMM_WORLD);
+
+        for (int i = 0; i < size; i++) {
+            B2[M[i].first - offset] = M[i].second;
+        }
+
+        delete[] recvCount;
+        delete[] M;
+        delete[] M2;
     }
 }
 
