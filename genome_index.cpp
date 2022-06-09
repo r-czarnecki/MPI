@@ -32,7 +32,7 @@ long long int getRank(long long int nprocs, long long int totalSize, MPI_Offset 
 
 template<typename T>
 void sort(MPI_Offset totalSize, MPI_Offset myOffset, long long int bufferSize, long long int i, long long int rank, MPI_Offset start, MPI_Offset end, T *buffer) {
-    long long int nprocs;
+    int nprocs;
     MPI_Comm_size(MPI_COMM_WORLD, &nprocs);
     long long int my_start = getOffset(totalSize, i, rank);
     long long int my_end = getOffset(totalSize, i, rank + 1) - 1;
@@ -70,7 +70,6 @@ void sort(MPI_Offset totalSize, MPI_Offset myOffset, long long int bufferSize, l
     long long int num_procs = procs_end - procs_start + 1;
     long long int communicateWith = -1;
     T *newBuffer = new T[my_end - my_start + 1];
-    MPI_Comm_rank(myComm, &rank);
 
     for (long long int phase = 0; phase < num_procs; phase++) {
         if (phase % 2 == 0) {
@@ -273,8 +272,8 @@ Rank *reorder(MPI_Offset totalSize, MPI_Offset myOffset, long long int bufferSiz
         destinations.push_back(std::make_pair(B[i].second, ranks[i]));
     }
 
-    std::vector<long long int> counts(nprocs, 0);
-    std::vector<long long int> displacemets(nprocs, 0);
+    std::vector<int> counts(nprocs, 0);
+    std::vector<int> displacemets(nprocs, 0);
     std::vector<std::pair<MPI_Offset, Rank>> send;
     std::pair<MPI_Offset, Rank> *recv = new std::pair<MPI_Offset, Rank>[bufferSize];
 
@@ -290,8 +289,8 @@ Rank *reorder(MPI_Offset totalSize, MPI_Offset myOffset, long long int bufferSiz
         send.push_back(std::make_pair(dest.first, dest.second));
     }
 
-    long long int *recvCounts = new long long int[nprocs];
-    long long int *recvDispl = new long long int[nprocs];
+    int *recvCounts = new int[nprocs];
+    int *recvDispl = new int[nprocs];
 
     MPI_Alltoall(counts.data(), 1, MPI_LONG_LONG, recvCounts, 1, MPI_LONG_LONG, MPI_COMM_WORLD);
 
