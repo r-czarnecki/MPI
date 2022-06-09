@@ -13,6 +13,32 @@ using Rank = long long int;
 
 MPI_File debug;
 
+
+template<typename T, typename F>
+void writeAll(T *B5, F f, int size, int nprocs, int rank, const char *s = " ") {
+    if (rank != 0) {
+        MPI_Send(B5, size * sizeof(T), MPI_BYTE, 0, 0, MPI_COMM_WORLD);
+    }
+    else {
+        for (int i = 0; i < size; i++) {
+            // printf(s, f(B5[i]));
+            std::cout << f(B5[i]) << s;
+        }
+        for (int j = 1; j < nprocs; j++) {
+            T *eee = new T[size];
+            MPI_Recv(eee, size * sizeof(T), MPI_BYTE, j, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+            
+            for (int i = 0; i < size; i++) {
+                // printf(s, f(eee[i]));
+                std::cout << f(eee[i]) << s;
+            }
+
+            delete[] eee;
+        }
+        printf("==========\n");
+    }
+}
+
 MPI_Offset getOffset(MPI_Offset totalSize, long long int i, long long int rank) {
     int nprocs;
     MPI_Comm_size(MPI_COMM_WORLD, &nprocs);
@@ -33,6 +59,9 @@ long long int getRank(long long int nprocs, long long int totalSize, MPI_Offset 
 
 template<typename T>
 void sort(MPI_Offset totalSize, MPI_Offset myOffset, long long int bufferSize, long long int i, long long int rank, MPI_Offset start, MPI_Offset end, T *buffer) {
+    if (rank == 0) {
+        printf("Sorting %lld...\n", bufferSize);
+    }
     int nprocs;
     MPI_Comm_size(MPI_COMM_WORLD, &nprocs);
     long long int my_start = getOffset(totalSize, i, rank);
@@ -139,13 +168,13 @@ void sort(MPI_Offset totalSize, MPI_Offset myOffset, long long int bufferSize, l
 unsigned long long int charToInt(char c) {
     switch (c) {
         case 'A':
-            return 0;
-        case 'C':
             return 1;
-        case 'G':
+        case 'C':
             return 2;
-        case 'T':
+        case 'G':
             return 3;
+        case 'T':
+            return 4;
         default:
             return 0;
     }
@@ -190,7 +219,7 @@ std::pair<KMer, MPI_Offset> *sortKmers(MPI_Offset totalSize, MPI_Offset myOffset
     long long int ptr = 0, ptr2 = (rank + 1) * k;
     for (long long int i = 0; i < k; i++) {
         unsigned long long int nextChar = getNextChar(ptr, ptr2, bufferSize, nprocs, k, buffer, endBuffer);
-        kmer <<= 2;
+        kmer <<= 4;
         kmer |= nextChar;
     }
 
@@ -199,7 +228,7 @@ std::pair<KMer, MPI_Offset> *sortKmers(MPI_Offset totalSize, MPI_Offset myOffset
 
     for (long long int i = 1; i < bufferSize; i++) {
         auto nextChar = getNextChar(ptr, ptr2, bufferSize, nprocs, k, buffer, endBuffer);
-        kmer <<= 2;
+        kmer <<= 4;
         kmer |= nextChar;
 
         B[i] = std::make_pair(kmer, myOffset + i);
@@ -207,8 +236,70 @@ std::pair<KMer, MPI_Offset> *sortKmers(MPI_Offset totalSize, MPI_Offset myOffset
 
     delete[] endBuffer;
     delete[] sendBuffer;
+    
+    // writeAll(B, [k](std::pair<KMer, MPI_Offset> e) {
+    //         auto elem = e;
+    //         std::string s;
+    //         KMer kmer = elem.first;
+    //         for (int i = 0; i < k; i++) {
+    //             // printf("%lld\n", kmer);
+    //             unsigned int c = kmer >> (4 * k - 4);
+    //             c &= 15;
+    //             // printf("-> %llu\n", c);
+    //             switch (c) {
+    //                 case 1:
+    //                     s += "A";
+    //                     break;
+    //                 case 2:
+    //                     s += "C";
+    //                     break;
+    //                 case 3:
+    //                     s += "G";
+    //                     break;
+    //                 case 4:
+    //                     s += "T";
+    //                     break;
+    //                 case 0:
+    //                     s += "-";
+    //                     break;
+    //             }
+    //             kmer <<= 4;
+    //         }
+    //         return s;
+    //     }, bufferSize, nprocs, rank, "\n");
 
     sort(totalSize, myOffset, bufferSize, 0, rank, 0, totalSize - 1, B);
+    
+    // writeAll(B, [k](std::pair<KMer, MPI_Offset> e) {
+    //         auto elem = e;
+    //         std::string s;
+    //         KMer kmer = elem.first;
+    //         for (int i = 0; i < k; i++) {
+    //             // printf("%lld\n", kmer);
+    //             unsigned int c = kmer >> (4 * k - 4);
+    //             c &= 15;
+    //             // printf("-> %llu\n", c);
+    //             switch (c) {
+    //                 case 1:
+    //                     s += "A";
+    //                     break;
+    //                 case 2:
+    //                     s += "C";
+    //                     break;
+    //                 case 3:
+    //                     s += "G";
+    //                     break;
+    //                 case 4:
+    //                     s += "T";
+    //                     break;
+    //                 case 0:
+    //                     s += "-";
+    //                     break;
+    //             }
+    //             kmer <<= 4;
+    //         }
+    //         return s;
+    //     }, bufferSize, nprocs, rank, "\n");
     return B;
 }
 
@@ -282,6 +373,10 @@ Rank *reorder(MPI_Offset totalSize, MPI_Offset myOffset, long long int bufferSiz
     for (long long int i = 0; i < destinations.size(); i++) {
         auto dest = destinations[i];
         long long int destRank = getRank(nprocs, totalSize, dest.first);
+        // if (rank == 0) {
+        //     printf("DESTRANK %d | POS %llu | VAL %llu\n", destRank, dest.first, dest.second);
+        //     printf("COUNTS %d\n", counts[destRank]);
+        // }
         if (counts[destRank] == 0) {
             displacemets[destRank] = i * sizeof(std::pair<MPI_Offset, Rank>);
         }
@@ -293,13 +388,29 @@ Rank *reorder(MPI_Offset totalSize, MPI_Offset myOffset, long long int bufferSiz
     int *recvCounts = new int[nprocs];
     int *recvDispl = new int[nprocs];
 
-    MPI_Alltoall(counts.data(), 1, MPI_LONG_LONG, recvCounts, 1, MPI_LONG_LONG, MPI_COMM_WORLD);
+    // printf("aaa %llu\n", recvCounts);
+
+    MPI_Alltoall(counts.data(), 1, MPI_INT, recvCounts, 1, MPI_INT, MPI_COMM_WORLD);
 
     recvDispl[0] = 0;
     for (long long int i = 1; i < nprocs; i++) {
         recvDispl[i] = recvDispl[i - 1] + recvCounts[i - 1];
     }
 
+    // if (rank == 0) {
+    //     printf("SIZEOF: %lu\n", sizeof(std::pair<MPI_Offset, Rank>));
+    //     printf("RECVCOUNTS: ");
+    //     for (int i = 0; i < nprocs; i++) {
+    //         printf("%d ", recvCounts[i]);
+    //     }
+    //     printf("\n");
+        
+    //     printf("RECVDISPL: ");
+    //     for (int i = 0; i < nprocs; i++) {
+    //         printf("%d ", recvDispl[i]);
+    //     }
+    //     printf("\n");
+    // }
     MPI_Alltoallv(send.data(), counts.data(), displacemets.data(), MPI_BYTE, recv, recvCounts, recvDispl, MPI_BYTE, MPI_COMM_WORLD);
 
     Rank *result = new Rank[bufferSize];
@@ -399,8 +510,14 @@ void getSA(MPI_Offset totalSize, MPI_Offset offset, long long int size, long lon
 
     while (true) {
         h += k;
+        if (rank == 0) {
+            printf("Reorder\n");
+        }
         auto B2 = reorder(totalSize, offset, size, rank, nprocs, B, ranks);
 
+        if (rank == 0) {
+            printf("Shift\n");
+        }
         auto B3 = shift(totalSize, offset, size, rank, nprocs, B2, h);
 
         std::pair<Rank, std::pair<Rank, MPI_Offset>> *B4 = new std::pair<Rank, std::pair<Rank, MPI_Offset>>[size];
@@ -412,6 +529,27 @@ void getSA(MPI_Offset totalSize, MPI_Offset offset, long long int size, long lon
 
         sort(totalSize, offset, size, 0, rank, 0, totalSize - 1, B4);
 
+        
+        // if (rank == 0) {
+        //     printf("SORTED\n");
+        //     // for (int i = 0; i < size; i++) {
+        //     //     printf("%llu ", B4[i].first);
+        //     // }
+        //     // printf("\n");
+        //     // for (int i = 0; i < size; i++) {
+        //     //     printf("%llu ", B4[i].second.first);
+        //     // }
+        //     // printf("\n");
+        //     // for (int i = 0; i < size; i++) {
+        //     //     printf("%llu ", B4[i].second.second);
+        //     // }
+        //     // printf("\n");
+        // }
+        
+        // writeAll(B4, [](std::pair<Rank, std::pair<Rank, MPI_Offset>> e){ return e.first; }, size, nprocs, rank);
+        // writeAll(B4, [](std::pair<Rank, std::pair<Rank, MPI_Offset>> e){ return e.second.first; }, size, nprocs, rank);
+        // writeAll(B4, [](std::pair<Rank, std::pair<Rank, MPI_Offset>> e){ return e.second.second; }, size, nprocs, rank);
+
         for (long long int i = 0; i < size; i++) {
             B[i] = std::make_pair(B4[i].first, B4[i].second.second);
             B3[i] = B4[i].second.first;
@@ -420,6 +558,15 @@ void getSA(MPI_Offset totalSize, MPI_Offset offset, long long int size, long lon
 
         auto B5 = rebucket(totalSize, offset, size, rank, nprocs, B, B3);
         MPI_Barrier(MPI_COMM_WORLD);
+        // if (rank == 0) {
+        //     printf("REBUCKET 2\n");
+        //     for (int i = 0; i < size; i++) {
+        //         printf("%llu ", B5[i]);
+        //     }
+        //     printf("\n");
+        // }
+
+        // writeAll(B5, [](Rank e){ return e; }, size, nprocs, rank);
         delete[] B3;
         
         done = allSingletons(totalSize, offset, size, rank, nprocs, B5);
@@ -458,9 +605,7 @@ std::vector<long long int> answerQueries(MPI_Offset totalSize, MPI_Offset myOffs
 
     for (long long int queryIdx = queryStart; queryIdx < queryEnd; queryIdx++) {
         if (rank == 0) {
-            assert(MPI_File_open(MPI_COMM_WORLD, "debug", MPI_MODE_CREATE | MPI_MODE_APPEND, MPI_INFO_NULL, &debug) == 0);
-            MPI_File_write(debug, "Answering query...\n", 19, MPI_CHAR, MPI_STATUS_IGNORE);
-            MPI_File_close(&debug);
+            printf("Answering query %d...\n", queryIdx);
         }
         std::string query = queries[queryIdx];
         long long int firstOcc = -1, lastOcc = -1;
@@ -661,16 +806,20 @@ std::vector<long long int> getResults(long long int i, std::vector<std::string> 
     char *buffer = new char[size + 1];
     dataSource.getNodeGenomeValues(test, buffer);
 
-    long long int k = 8 * sizeof(long long int) / 2;
+    long long int k = 8 * sizeof(long long int) / 4;
 
+    if (rank == 0) {
+        printf("Sorting kmers\n");
+    }
     auto B = sortKmers(totalSize, offset, size, rank, nprocs, buffer, k);
 
+    if (rank == 0) {
+        printf("Rebucketing\n");
+    }
     auto ranks = rebucket(totalSize, offset, size, rank, nprocs, B);
 
     if (rank == 0) {
-        assert(MPI_File_open(MPI_COMM_WORLD, "debug", MPI_MODE_CREATE | MPI_MODE_APPEND, MPI_INFO_NULL, &debug) == 0);
-        MPI_File_write(debug, "Getting SA...\n", 14, MPI_CHAR, MPI_STATUS_IGNORE);
-        MPI_File_close(&debug);
+        printf("Getting SA %lld...\n", i);
     }
     getSA(totalSize, offset, size, rank, nprocs, B, ranks, k);
 
@@ -692,16 +841,15 @@ int main(int argc, char *argv[]) {
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
     MPI_Comm_size(MPI_COMM_WORLD, &nprocs);
 
-    if (rank == 0) {
-        assert(MPI_File_open(MPI_COMM_WORLD, "debug", MPI_MODE_CREATE | MPI_MODE_WRONLY, MPI_INFO_NULL, &debug) == 0);
-        MPI_File_close(&debug);
-    }
-
     std::vector<std::string> queries;
     std::ifstream cin(argv[4]);
     std::string query;
     std::vector<std::string> results;
 
+    
+    if (rank == 0) {
+        printf("Reading queries...\n");
+    }
     while (cin >> query) {
         queries.push_back(query);
     }
