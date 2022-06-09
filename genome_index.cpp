@@ -1005,7 +1005,7 @@ std::vector<long long int> answerQueries(MPI_Offset totalSize, MPI_Offset myOffs
             }
         }
 
-        results.push_back((firstOcc == -1) ? 0 : lastOcc - firstOcc + 1);
+        results.push_back((firstOcc == -1) ? -1 : lastOcc - firstOcc + 1);
     }
 
     while (true) {
