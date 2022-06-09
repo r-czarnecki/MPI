@@ -884,6 +884,9 @@ std::vector<long long int> answerQueries(MPI_Offset totalSize, MPI_Offset myOffs
         if (rank == 0) {
             printf("Answering query %d...\n", queryIdx);
         }
+        if (queryIdx == 75) {
+            printf("QUERY %s\n", queries[queryIdx].c_str());
+        }
         std::string query = queries[queryIdx];
         long long int firstOcc = -1, lastOcc = -1;
         
@@ -963,12 +966,12 @@ std::vector<long long int> answerQueries(MPI_Offset totalSize, MPI_Offset myOffs
                         }
                     }
 
+                    if (queryIdx == 75) {
+                        printf(" %s (%lld) | CMP %d\n", recvChars + sa - getOffset(totalSize, 0, saRank), sa, cmp);
+                    }
                     saRank++;
                     sa = getOffset(totalSize, 0, saRank);
 
-                    if (queryIdx == 75) {
-                        printf(" | CMP %d\n", cmp);
-                    }
                 }
 
                 bool cont = false;
