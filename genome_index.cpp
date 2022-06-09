@@ -967,7 +967,10 @@ std::vector<long long int> answerQueries(MPI_Offset totalSize, MPI_Offset myOffs
                     }
 
                     if (queryIdx == 75) {
-                        printf(" %s (%lld) | CMP %d\n", recvChars + sa - getOffset(totalSize, 0, saRank), sa, cmp);
+                        printf(" ");
+                        for (int i = sa - getOffset(totalSize, 0, saRank); i < recvSize; i++)
+                            printf("%c", recvChars[i]);
+                        printf(" (%lld) | CMP %d\n", sa, cmp);
                     }
                     saRank++;
                     sa = getOffset(totalSize, 0, saRank);
