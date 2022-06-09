@@ -606,14 +606,12 @@ void sortRanks(MPI_Offset totalSize, MPI_Offset myOffset, long long int bufferSi
 }
 
 void getSA(MPI_Offset totalSize, MPI_Offset offset, long long int size, long long int rank, long long int nprocs, std::pair<KMer, MPI_Offset> *B, Rank *ranks, long long int k) {
-    long long int h = 0;
+    long long int h = k;
     bool done = false;
     Rank *B3 = new Rank[size];
     auto B2 = reorder(totalSize, offset, size, rank, nprocs, B, ranks);
 
     while (true) {
-        h += k;
-
         // if (rank == 0) {
         //     printf("Shift\n");
         // }
@@ -853,6 +851,8 @@ void getSA(MPI_Offset totalSize, MPI_Offset offset, long long int size, long lon
         delete[] recvCount;
         delete[] M;
         delete[] M2;
+
+        h *= 2;
     }
 }
 
