@@ -458,7 +458,9 @@ std::vector<long long int> answerQueries(MPI_Offset totalSize, MPI_Offset myOffs
 
     for (long long int queryIdx = queryStart; queryIdx < queryEnd; queryIdx++) {
         if (rank == 0) {
-            MPI_File_write_shared(debug, "Answering query...\n", 19, MPI_CHAR, MPI_STATUS_IGNORE);
+            assert(MPI_File_open(MPI_COMM_WORLD, "debug", MPI_MODE_CREATE | MPI_MODE_APPEND, MPI_INFO_NULL, &debug) == 0);
+            MPI_File_write(debug, "Answering query...\n", 19, MPI_CHAR, MPI_STATUS_IGNORE);
+            MPI_File_close(&debug);
         }
         std::string query = queries[queryIdx];
         long long int firstOcc = -1, lastOcc = -1;
@@ -666,7 +668,9 @@ std::vector<long long int> getResults(long long int i, std::vector<std::string> 
     auto ranks = rebucket(totalSize, offset, size, rank, nprocs, B);
 
     if (rank == 0) {
-        MPI_File_write_shared(debug, "Getting SA...\n", 14, MPI_CHAR, MPI_STATUS_IGNORE);
+        assert(MPI_File_open(MPI_COMM_WORLD, "debug", MPI_MODE_CREATE | MPI_MODE_APPEND, MPI_INFO_NULL, &debug) == 0);
+        MPI_File_write(debug, "Getting SA...\n", 14, MPI_CHAR, MPI_STATUS_IGNORE);
+        MPI_File_close(&debug);
     }
     getSA(totalSize, offset, size, rank, nprocs, B, ranks, k);
 
@@ -688,8 +692,10 @@ int main(int argc, char *argv[]) {
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
     MPI_Comm_size(MPI_COMM_WORLD, &nprocs);
 
-    if (rank == 0)
+    if (rank == 0) {
         assert(MPI_File_open(MPI_COMM_WORLD, "debug", MPI_MODE_CREATE | MPI_MODE_WRONLY, MPI_INFO_NULL, &debug) == 0);
+        MPI_File_close(&debug);
+    }
 
     std::vector<std::string> queries;
     std::ifstream cin(argv[4]);
@@ -734,9 +740,6 @@ int main(int argc, char *argv[]) {
     }
 
     MPI_File_close(&fh);
-    
-    if (rank == 0)
-        MPI_File_close(&debug);
 
     MPI_Finalize();
 }
