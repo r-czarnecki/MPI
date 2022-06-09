@@ -2,6 +2,7 @@
 #include <fstream>
 #include <utility>
 #include <cassert>
+#include <cstring>
 #include <vector>
 #include <mpi.h>
 
