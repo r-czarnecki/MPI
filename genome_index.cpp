@@ -907,12 +907,13 @@ std::vector<long long int> answerQueries(MPI_Offset totalSize, MPI_Offset myOffs
 
                     if (pos >= myOffset && pos < myOffset + bufferSize) {
                         long long int sa = SA[pos - myOffset].second;
+                        SASend[i] = sa;
 
                         if (pos == 3124 && pos >= myOffset && pos < myOffset + bufferSize) {
                             printf(" | POS %lld | OFFSET %lld | SA %llu | FROM %lld | TO %lld\n", pos, myOffset, sa, rank, i);
                         }
                         MPI_Request req;
-                        MPI_Isend(&sa, 1, MPI_LONG_LONG, i, 0, MPI_COMM_WORLD, &req);
+                        MPI_Isend(SASend.data() + i, 1, MPI_LONG_LONG, i, 0, MPI_COMM_WORLD, &req);
                         requests.push_back(req);
                     }
                 }
@@ -1047,9 +1048,10 @@ std::vector<long long int> answerQueries(MPI_Offset totalSize, MPI_Offset myOffs
             }
             if (pos >= myOffset && pos < myOffset + bufferSize) {
                 long long int sa = SA[pos - myOffset].second;
+                SASend[i] = sa;
 
                 MPI_Request req;
-                MPI_Isend(&sa, 1, MPI_LONG_LONG, i, 0, MPI_COMM_WORLD, &req);
+                MPI_Isend(SASend.data() + i, 1, MPI_LONG_LONG, i, 0, MPI_COMM_WORLD, &req);
                 requests.push_back(req);
             }
         }
