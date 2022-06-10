@@ -1184,7 +1184,7 @@ int main(int argc, char *argv[]) {
     }
 
     MPI_File fh;
-    assert(MPI_File_open(MPI_COMM_WORLD, argv[5], MPI_MODE_CREATE | MPI_MODE_WRONLY, MPI_INFO_NULL, &fh) == 0);
+    MPI_File_open(MPI_COMM_WORLD, argv[5], MPI_MODE_CREATE | MPI_MODE_WRONLY, MPI_INFO_NULL, &fh);
     long long int tmp;
 
     if (rank != 0) {
