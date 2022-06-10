@@ -905,12 +905,12 @@ std::vector<long long int> answerQueries(MPI_Offset totalSize, MPI_Offset myOffs
                 for (long long int i = 0; i < nprocs; i++) {
                     long long int pos = recvBuff[i];
 
-                    if (pos == 3124 && pos >= myOffset && pos < myOffset + bufferSize) {
-                        printf(" | POS %lld | OFFSET %lld | SA %llu | FROM %lld | TO %lld\n", pos, myOffset, SA[pos - myOffset].second, rank, i);
-                    }
                     if (pos >= myOffset && pos < myOffset + bufferSize) {
                         long long int sa = SA[pos - myOffset].second;
 
+                        if (pos == 3124 && pos >= myOffset && pos < myOffset + bufferSize) {
+                            printf(" | POS %lld | OFFSET %lld | SA %llu | FROM %lld | TO %lld\n", pos, myOffset, sa, rank, i);
+                        }
                         MPI_Request req;
                         MPI_Isend(&sa, 1, MPI_LONG_LONG, i, 0, MPI_COMM_WORLD, &req);
                         requests.push_back(req);
