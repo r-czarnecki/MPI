@@ -906,7 +906,7 @@ std::vector<long long int> answerQueries(MPI_Offset totalSize, MPI_Offset myOffs
                     long long int pos = recvBuff[i];
 
                     if (pos == 3124 && pos >= myOffset && pos < myOffset + bufferSize) {
-                        printf(" | POS %lld | OFFSET %lld | SA %llu\n", pos, myOffset, SA[pos - myOffset].second);
+                        printf(" | POS %lld | OFFSET %lld | SA %llu | TO %lld\n", pos, myOffset, SA[pos - myOffset].second, i);
                     }
                     if (pos >= myOffset && pos < myOffset + bufferSize) {
                         long long int sa = SA[pos - myOffset].second;
@@ -921,6 +921,9 @@ std::vector<long long int> answerQueries(MPI_Offset totalSize, MPI_Offset myOffs
                 long long int sa;
 
                 MPI_Recv(&sa, 1, MPI_LONG_LONG, getRank(nprocs, totalSize, mid), 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+                if (queryIdx == 75) {
+                    printf(" RECV | SA %lld | FROM %lld", sa, getRank(nprocs, totalSize, mid));
+                }
 
                 for (auto &req : requests) {
                     MPI_Wait(&req, MPI_STATUS_IGNORE);
