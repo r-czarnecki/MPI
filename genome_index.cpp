@@ -1171,10 +1171,10 @@ int main(int argc, char *argv[]) {
 
         for (long long int j = 0; j < result.size(); j++) {
             if (i == 0) {
-                results.push_back(std::to_string(result[j]) + " ");
+                results.push_back(std::to_string(result[j]));
             }
             else {
-                results[j] += std::to_string(result[j]) + " ";
+                results[j] += " " + std::to_string(result[j]);
             }
 
             if (i == genomeNumber - 1) {
