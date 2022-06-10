@@ -15,33 +15,33 @@ using Rank = long long int;
 MPI_File debug;
 
 
-template<typename T, typename F>
-void writeAll(T *B5, F f, int size, int nprocs, int rank, const char *s = " ", const char *s2 = "") {
-    if (rank != 0) {
-        MPI_Send(B5, size * sizeof(T), MPI_BYTE, 0, 0, MPI_COMM_WORLD);
-    }
-    else {
-        for (int i = 0; i < size; i++) {
-            // printf(s, f(B5[i]));
-            std::cout << f(B5[i]) << s;
-        }
-        std::cout << s2;
-        for (int j = 1; j < nprocs; j++) {
-            T *eee = new T[size];
-            MPI_Recv(eee, size * sizeof(T), MPI_BYTE, j, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+// template<typename T, typename F>
+// void writeAll(T *B5, F f, int size, int nprocs, int rank, const char *s = " ", const char *s2 = "") {
+//     if (rank != 0) {
+//         MPI_Send(B5, size * sizeof(T), MPI_BYTE, 0, 0, MPI_COMM_WORLD);
+//     }
+//     else {
+//         for (int i = 0; i < size; i++) {
+//             // printf(s, f(B5[i]));
+//             std::cout << f(B5[i]) << s;
+//         }
+//         std::cout << s2;
+//         for (int j = 1; j < nprocs; j++) {
+//             T *eee = new T[size];
+//             MPI_Recv(eee, size * sizeof(T), MPI_BYTE, j, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
             
-            for (int i = 0; i < size; i++) {
-                // printf(s, f(eee[i]));
-                std::cout << f(eee[i]) << s;
-            }
+//             for (int i = 0; i < size; i++) {
+//                 // printf(s, f(eee[i]));
+//                 std::cout << f(eee[i]) << s;
+//             }
 
-            std::cout << s2;
+//             std::cout << s2;
 
-            delete[] eee;
-        }
-        printf("==========\n");
-    }
-}
+//             delete[] eee;
+//         }
+//         printf("==========\n");
+//     }
+// }
 
 MPI_Offset getOffset(MPI_Offset totalSize, long long int i, long long int rank) {
     int nprocs;
@@ -884,9 +884,9 @@ std::vector<long long int> answerQueries(MPI_Offset totalSize, MPI_Offset myOffs
         if (rank == 0) {
             printf("Answering query %d...\n", queryIdx);
         }
-        if (queryIdx == 75) {
-            printf("QUERY %s\n", queries[queryIdx].c_str());
-        }
+        // if (queryIdx == 75) {
+        //     printf("QUERY %s\n", queries[queryIdx].c_str());
+        // }
         std::string query = queries[queryIdx];
         long long int firstOcc = -1, lastOcc = -1;
         
@@ -895,9 +895,9 @@ std::vector<long long int> answerQueries(MPI_Offset totalSize, MPI_Offset myOffs
 
             while (begin <= end) {
                 long long int mid = (begin + end) / 2;
-                if (queryIdx == 75) {
-                    printf("DEBUG | %d %d %d", begin, mid, end);
-                }
+                // if (queryIdx == 75) {
+                //     printf("DEBUG | %d %d %d", begin, mid, end);
+                // }
 
                 MPI_Allgather(&mid, 1, MPI_LONG_LONG, recvBuff, 1, MPI_LONG_LONG, MPI_COMM_WORLD);
                 
@@ -909,9 +909,9 @@ std::vector<long long int> answerQueries(MPI_Offset totalSize, MPI_Offset myOffs
                         long long int sa = SA[pos - myOffset].second;
                         SASend[i] = sa;
 
-                        if (pos == 3124 && pos >= myOffset && pos < myOffset + bufferSize) {
-                            printf(" | POS %lld | OFFSET %lld | SA %llu | FROM %lld | TO %lld\n", pos, myOffset, sa, rank, i);
-                        }
+                        // if (pos == 3124 && pos >= myOffset && pos < myOffset + bufferSize) {
+                        //     printf(" | POS %lld | OFFSET %lld | SA %llu | FROM %lld | TO %lld\n", pos, myOffset, sa, rank, i);
+                        // }
                         MPI_Request req;
                         MPI_Isend(SASend.data() + i, 1, MPI_LONG_LONG, i, 0, MPI_COMM_WORLD, &req);
                         requests.push_back(req);
@@ -922,9 +922,9 @@ std::vector<long long int> answerQueries(MPI_Offset totalSize, MPI_Offset myOffs
                 long long int sa;
 
                 MPI_Recv(&sa, 1, MPI_LONG_LONG, getRank(nprocs, totalSize, mid), 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
-                if (queryIdx == 75) {
-                    printf(" RECV | SA %lld | FROM %lld | TO %lld", sa, getRank(nprocs, totalSize, mid), rank);
-                }
+                // if (queryIdx == 75) {
+                //     printf(" RECV | SA %lld | FROM %lld | TO %lld", sa, getRank(nprocs, totalSize, mid), rank);
+                // }
 
                 for (auto &req : requests) {
                     MPI_Wait(&req, MPI_STATUS_IGNORE);
@@ -974,12 +974,12 @@ std::vector<long long int> answerQueries(MPI_Offset totalSize, MPI_Offset myOffs
                         }
                     }
 
-                    if (queryIdx == 75) {
-                        printf(" ");
-                        for (int i = sa - getOffset(totalSize, 0, saRank); i < recvSize; i++)
-                            printf("%c", recvChars[i]);
-                        printf(" (%lld) | CMP %d\n", sa, cmp);
-                    }
+                    // if (queryIdx == 75) {
+                    //     printf(" ");
+                    //     for (int i = sa - getOffset(totalSize, 0, saRank); i < recvSize; i++)
+                    //         printf("%c", recvChars[i]);
+                    //     printf(" (%lld) | CMP %d\n", sa, cmp);
+                    // }
                     saRank++;
                     sa = getOffset(totalSize, 0, saRank);
 
@@ -1043,9 +1043,9 @@ std::vector<long long int> answerQueries(MPI_Offset totalSize, MPI_Offset myOffs
                 ret = false;
             }
 
-            if (i == 75 && pos >= myOffset && pos < myOffset + bufferSize) {
-                printf(" | POS %lld | OFFSET %lld | SA %llu\n", pos, myOffset, SA[pos - myOffset].second);
-            }
+            // if (i == 75 && pos >= myOffset && pos < myOffset + bufferSize) {
+            //     printf(" | POS %lld | OFFSET %lld | SA %llu\n", pos, myOffset, SA[pos - myOffset].second);
+            // }
             if (pos >= myOffset && pos < myOffset + bufferSize) {
                 long long int sa = SA[pos - myOffset].second;
                 SASend[i] = sa;
@@ -1126,14 +1126,14 @@ std::vector<long long int> getResults(long long int i, std::vector<std::string> 
         printf("Getting SA %lld...\n", i);
     }
     getSA(totalSize, offset, size, rank, nprocs, B, ranks, k);
-    if (rank == 0) {
-        printf("SA 2\n");
-        // for (int i = 0; i < size; i++) {
-        //     printf("%llu ", B[i].second);
-        // }
-        // printf("\n");
-    }
-    writeAll(B, [](std::pair<KMer, MPI_Offset> e){return e.second;}, size, nprocs, rank);
+    // if (rank == 0) {
+    //     printf("SA 2\n");
+    //     // for (int i = 0; i < size; i++) {
+    //     //     printf("%llu ", B[i].second);
+    //     // }
+    //     // printf("\n");
+    // }
+    // writeAll(B, [](std::pair<KMer, MPI_Offset> e){return e.second;}, size, nprocs, rank);
 
     auto result = answerQueries(totalSize, offset, size, rank, nprocs, buffer, B, queries);
 
