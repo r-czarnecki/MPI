@@ -904,6 +904,10 @@ std::vector<long long int> answerQueries(MPI_Offset totalSize, MPI_Offset myOffs
                 std::vector<long long int> SASend(nprocs, 0);
                 for (long long int i = 0; i < nprocs; i++) {
                     long long int pos = recvBuff[i];
+
+                    if (pos == 3124 && pos >= myOffset && pos < myOffset + bufferSize) {
+                        printf(" | POS %lld | OFFSET %lld | SA %llu\n", pos, myOffset, SA[pos - myOffset].second);
+                    }
                     if (pos >= myOffset && pos < myOffset + bufferSize) {
                         long long int sa = SA[pos - myOffset].second;
 
@@ -1035,6 +1039,9 @@ std::vector<long long int> answerQueries(MPI_Offset totalSize, MPI_Offset myOffs
                 ret = false;
             }
 
+            if (i == 75 && pos >= myOffset && pos < myOffset + bufferSize) {
+                printf(" | POS %lld | OFFSET %lld | SA %llu\n", pos, myOffset, SA[pos - myOffset].second);
+            }
             if (pos >= myOffset && pos < myOffset + bufferSize) {
                 long long int sa = SA[pos - myOffset].second;
 
